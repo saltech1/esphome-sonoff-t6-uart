@@ -21,7 +21,7 @@ Configuration validation rejects a competing dummy receiver.
 
 ```yaml
 external_components:
-  - source: github://saltech1/esphome-mpr03x@main
+  - source: github://saltech1/esphome-sonoff-t6-uart@main
     refresh: 0s  # Useful while testing updates; omit for normal operation.
     components: [sonoff_t6]
 

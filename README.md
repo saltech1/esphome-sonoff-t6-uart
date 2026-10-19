@@ -17,7 +17,7 @@ Merge these blocks into your existing working Wi-Fi/API/OTA/relay configuration:
 
 ```yaml
 external_components:
-  - source: github://saltech1/esphome-mpr03x@main
+  - source: github://saltech1/esphome-sonoff-t6-uart@main
     components: [sonoff_t6]
 
 uart:
