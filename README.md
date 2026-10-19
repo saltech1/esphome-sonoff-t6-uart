@@ -78,6 +78,7 @@ blocks into your existing firmware configuration for normal use.
 | `filter_configuration` | `0x24` | Raw filter register `0x43` |
 | `half_period_us` | `10` | 5–100 µs; GPIO overhead makes the clock slower |
 | `internal_pullups` | `false` | Optional MCU pull-ups; prefer existing external pull-ups |
+| `diagnostics` | `false` | Scan normal bus addresses at startup; log raw electrode snapshots every second |
 | `update_interval` | `20ms` | Button polling interval, minimum 10 ms |
 
 The initialization values are starting values, **not recovered SONOFF factory
@@ -93,6 +94,64 @@ two seconds. The first readings are delayed 500 ms after initialization for
 baseline/filter settling. Overcurrent is reported as an error.
 
 ## Hardware troubleshooting
+
+For the first test, enable the following in your **existing working firmware**:
+
+```yaml
+logger:
+  baud_rate: 0
+  level: DEBUG
+  logs:
+    mpr03x: DEBUG
+
+mpr03x:
+  id: touch_controller
+  scl: P0
+  sda: P1
+  address: 0x4A
+  diagnostics: true
+```
+
+Merge these keys into existing blocks; do not create duplicate `logger:` or
+`mpr03x:` blocks. With a GitHub external source, temporarily use `refresh: 0s`
+under the source entry when rebuilding to avoid using a cached component.
+
+Capture logs from a restart through about 10 seconds untouched, then touch each
+pad individually for 2–3 seconds, with a 2–3 second gap. Include the entire
+startup, configuration dump and test sequence, plus the YAML touch block and
+which physical pad you touched in what order. If network logging connects after
+initialization, include the periodic snapshots and restart with logging already
+attached if possible. Keep `baud_rate: 0` to leave P0/P1 free.
+
+The logs identify driver revision 2, pin assignments, thresholds, pull-up mode,
+released bus levels, discovered addresses, pre-configuration status, every
+configuration register's readback, and touch-status changes. Transfer errors
+include the register, address, failed phase (address ACK, register pointer,
+data, repeated START or STOP), and line levels after STOP. Snapshots include
+uptime, read/failure counts, electrode configuration, filtered values, baseline
+values scaled to the same range, and baseline-minus-filtered deltas for all pads.
+Raw bytes are read sequentially, so snapshots are approximate during transitions.
+
+Address probes alone do **not** identify a chip. With `diagnostics: true` the
+first recovered bus is scanned once from `0x08` through `0x77` using only a write
+address followed by STOP (no register/data writes). Otherwise only `0x4A` and
+`0x4B` are probed. Discovery never changes the configured address automatically.
+Successful configuration writes are always read back, even with diagnostics off.
+Logging is outside individual bit timing windows; successful individual register
+transactions are only logged at `VERY_VERBOSE`, which is unnecessary for a first
+test. Disable `diagnostics` after troubleshooting to remove the periodic reads.
+
+### Board photo observations
+
+The provided `WS T6-120_TCH V1.1` photo (silkscreen date `2025.06.06`) shows J2
+labeled `GND / SCL / SDA / 3V3`, and a separate J3 labeled
+`GND / TXD / RXD / 3V3`. This supports separate bus and serial access, but does
+not prove the bus protocol, P0/P1 mapping, resistor values, pull-up voltage, or
+controller identity. U2 appears to be an eight-pin package with protruding leads;
+the documented NXP MPR031/032 package is a 2 mm leadless µDFN. Its marking is
+unreadable in this photo, so the MPR03x identification remains uncertain. A clear
+U2 marking or an address/register capture would resolve that uncertainty. The
+photo is kept local and is not included in the repository.
 
 1. Look for `Configured three electrodes at 0x4A` in the logs. If initialization
    fails, verify the chip marking and try `address: 0x4B` for an MPR032.

@@ -37,6 +37,7 @@ CONFIG_SCHEMA = cv.All(
         cv.Optional("filter_configuration", default=0x24): cv.int_range(min=0, max=255),
         cv.Optional("half_period_us", default=10): cv.int_range(min=5, max=100),
         cv.Optional("internal_pullups", default=False): cv.boolean,
+        cv.Optional("diagnostics", default=False): cv.boolean,
     }).extend(cv.polling_component_schema("20ms")),
     validate_config,
 )
@@ -50,5 +51,5 @@ async def to_code(config):
         cg.add(getattr(var, f"set_{key}_pin")(pin))
     for key in (CONF_ADDRESS, "touch_threshold", "release_threshold",
                 "afe_configuration", "filter_configuration", "half_period_us",
-                "internal_pullups"):
+                "internal_pullups", "diagnostics"):
         cg.add(getattr(var, f"set_{key}")(config[key]))

@@ -8,6 +8,9 @@ bk72xx:
 
 logger:
   baud_rate: 0
+  level: DEBUG
+  logs:
+    mpr03x: DEBUG
 
 external_components:
   - source:
@@ -23,6 +26,7 @@ mpr03x:
   touch_threshold: 12
   release_threshold: 6
   update_interval: 20ms
+  diagnostics: true
 
 binary_sensor:
   - platform: mpr03x

@@ -33,6 +33,11 @@ class ConfigurationTests(unittest.TestCase):
         code, output = self.check_config({'address': 0x4B})
         self.assertEqual(code, 0, output)
 
+    def test_diagnostics(self):
+        code, output = self.check_config({'diagnostics': True})
+        self.assertEqual(code, 0, output)
+        self.assertIn('diagnostics: true', output)
+
     def test_reject_unsafe_settings(self):
         for changes in ({'sda': 'P0'}, {'touch_threshold': 6, 'release_threshold': 6},
                         {'sda': {'number': 'P1', 'inverted': True}},

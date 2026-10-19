@@ -20,6 +20,7 @@ class MPR03X : public PollingComponent {
   void set_filter_configuration(uint8_t value) { filter_configuration_ = value; }
   void set_half_period_us(uint32_t value) { half_period_us_ = value; }
   void set_internal_pullups(bool value) { internal_pullups_ = value; }
+  void set_diagnostics(bool value) { diagnostics_ = value; }
   void register_sensor(MPR03XBinarySensor *sensor, uint8_t channel) { sensors_.push_back({sensor, channel}); }
   void setup() override;
   void update() override;
@@ -41,6 +42,16 @@ class MPR03X : public PollingComponent {
   bool configured_{false};
   bool ready_{false};
   uint32_t last_attempt_{0};
+  bool diagnostics_{false};
+  bool probe_pending_{true};
+  bool have_status_{false};
+  uint8_t previous_status_{0};
+  uint32_t last_diagnostics_{0};
+  uint32_t attempts_{0};
+  uint32_t failures_{0};
+  uint32_t reads_{0};
+  const char *error_{nullptr};
+  const char *phase_{"idle"};
   void pause_();
   void release_(InternalGPIOPin *pin);
   void low_(InternalGPIOPin *pin);
@@ -53,6 +64,10 @@ class MPR03X : public PollingComponent {
   bool write_register_(uint8_t reg, uint8_t value);
   bool read_register_(uint8_t reg, uint8_t &value);
   bool configure_();
+  bool write_checked_(uint8_t reg, uint8_t value);
+  void probe_addresses_();
+  void log_transfer_failure_(const char *operation, uint8_t reg);
+  bool log_diagnostics_();
   void communication_failed_();
 };
 
