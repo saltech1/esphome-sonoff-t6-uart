@@ -97,9 +97,20 @@ merging it into your device configuration.
 
 ## Diagnostics and behavior
 
-At DEBUG level the driver logs valid raw frames, decoded transitions, and
-unknown command/event codes. Every 30 seconds it reports received bytes,
-valid/rejected frames and buffered partial bytes. No received data after 30
+To enable raw packet and summary diagnostics, rebuild with:
+
+```yaml
+logger:
+  baud_rate: 0
+  level: VERBOSE
+  logs:
+    sonoff_t6: VERBOSE
+```
+
+
+At DEBUG level the driver logs decoded transitions and unknown command/event
+codes. Raw frames are logged at VERBOSE level, along with a summary every 30
+seconds of received bytes, valid/rejected frames and buffered partial bytes. No received data after 30
 seconds produces a warning. Invalid version, length, checksum and timed-out
 partial packets are logged separately.
 

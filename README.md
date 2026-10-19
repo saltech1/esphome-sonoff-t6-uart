@@ -91,8 +91,9 @@ configuration and loads the component from GitHub.
 ## Protocol and diagnostics
 
 The driver validates checksums, handles fragmented/concatenated packets, and
-resynchronizes after malformed data. DEBUG logs include raw frames, button
-transitions, errors and periodic UART counters. Missing releases mark the
+resynchronizes after malformed data. DEBUG logs show button transitions and
+unmapped events; warnings report faults. Raw packets and periodic UART counters
+are available at VERBOSE level. Missing releases mark the
 sensor unknown after a configurable timeout.
 
 - [Stock firmware analysis and protocol evidence](docs/sonoff-t6-firmware-analysis.md)

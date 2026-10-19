@@ -12,7 +12,7 @@ void SonoffT6::setup() {
 }
 
 void SonoffT6::handle_frame_(const Frame &frame) {
-  ESP_LOGD(TAG, "RX %s", format_hex_pretty(frame.bytes.data(), frame.size).c_str());
+  ESP_LOGV(TAG, "RX %s", format_hex_pretty(frame.bytes.data(), frame.size).c_str());
   if (frame.command() != 0x02 || frame.length() != 2) {
     ESP_LOGD(TAG, "Unmapped frame: command=0x%02X payload_length=%u (no state change)",
              frame.command(), frame.length());
@@ -79,7 +79,7 @@ void SonoffT6::loop() {
   }
   if (now - last_summary_ >= 30000) {
     last_summary_ = now;
-    ESP_LOGD(TAG, "UART summary: bytes=%u valid_frames=%u rejected=%u pending=%u",
+    ESP_LOGV(TAG, "UART summary: bytes=%u valid_frames=%u rejected=%u pending=%u",
              static_cast<unsigned>(received_), static_cast<unsigned>(valid_),
              static_cast<unsigned>(rejected_), static_cast<unsigned>(parser_.size()));
     if (received_ == 0) ESP_LOGW(TAG, "No UART bytes received yet; check RX=P1, controller power, and pin conflicts");
