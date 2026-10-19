@@ -1,228 +1,88 @@
-# ESPHome SONOFF T6 touch buttons
+# ESPHome SONOFF T6 UART touch buttons
 
-**Hardware capture confirms the UART touch protocol.** The `sonoff_t6`
-component exposes the two physical pads on the tested device:
-**left = button ID 3**, **right = button ID 1**. It receives on **P1 at 115200
-8N1** and sends no commands automatically.
+An ESPHome external component for the SONOFF T6's UART touch controller on
+BK7238. **Confirmed working on the owner's two-pad device.**
 
-Use the [SONOFF T6 component configuration](docs/sonoff-t6-uart.md) and
-[compile example](examples/sonoff-t6-uart.yaml). If retaining UART debug output,
-set `dummy_receiver: false` so the driver can consume the bytes. The C++ parser
-is tested against the captures; the full component still needs a hardware test.
+| Pad | Button ID |
+| --- | --- |
+| Left | `3` |
+| Right | `1` |
 
-**SONOFF T6 firmware research update:** deeper analysis of the supplied stock
-dump traces the active touch interface to **UART2 at 115200 8N1, P0/TX and
-P1/RX**, with checksummed `AA 55` packets. The original MPR03x identification is
-not supported by that path. The [UART capture example](examples/sonoff-t6-uart-capture.yaml)
-remains available for raw protocol investigation. Remove the MPR03x blocks
-when using either UART example.
-The actual unmarked U2 part number is still unknown. See the
-[firmware evidence and recovered commands](docs/sonoff-t6-firmware-analysis.md).
-The MPR03x component below remains an experimental driver for actual
-MPR031/032 controllers; it is not established as suitable for this SONOFF board.
+The component receives on **P1 at 115200 8N1**. Event `1` means pressed and
+event `0` means released. It sends no initialization or settings commands.
 
-## Original experimental MPR03x driver
+## Use
 
-External component for the MPR031/MPR032 capacitive touch controller, targeting
-the SONOFF T6 with a BK7238 and **SCL on P0 / SDA on P1**. Implements a private
-software I2C bus through ESPHome GPIO APIs; it does not depend on `Wire`, the
-ESPHome `i2c:` component, or LibreTiny hardware I2C support.
-
-**Status: experimental, not yet tested on physical hardware.** The supplied
-example targets BK7238. Controller identity, bus address, physical electrode
-order, and sensitivity still need confirmation on the actual switch.
-
-## Use with your working configuration
-
-Keep your existing board, network, relays and LEDs. Copy the `components/mpr03x`
-directory beside your YAML under `components/`, then add:
-
-```yaml
-external_components:
-  - source:
-      type: local
-      path: components
-    components: [mpr03x]
-
-mpr03x:
-  id: touch_controller
-  scl: P0
-  sda: P1
-  address: 0x4A
-  touch_threshold: 12
-  release_threshold: 6
-  update_interval: 20ms
-
-binary_sensor:
-  - platform: mpr03x
-    mpr03x_id: touch_controller
-    channel: 0
-    name: Touch electrode 0
-    on_press:
-      - switch.toggle: relay_1  # Your existing relay ID
-  - platform: mpr03x
-    mpr03x_id: touch_controller
-    channel: 1
-    name: Touch electrode 1
-    on_press:
-      - switch.toggle: relay_2
-  - platform: mpr03x
-    mpr03x_id: touch_controller
-    channel: 2
-    name: Touch electrode 2
-    on_press:
-      - switch.toggle: relay_3
-```
-
-Verify electrode order in logs before attaching the relay automations. Use
-`logger: {baud_rate: 0}` if UART logging otherwise claims the bus pins. Don't
-assign P0/P1 to another component, including `i2c:` or UART.
-
-To load the component from GitHub, replace the local source with:
+Merge these blocks into your existing working Wi-Fi/API/OTA/relay configuration:
 
 ```yaml
 external_components:
   - source: github://saltech1/esphome-mpr03x@main
-    components: [mpr03x]
-```
+    components: [sonoff_t6]
 
-`examples/sonoff-t6-touch.yaml` is a minimal compile example; merge its touch
-blocks into your existing firmware configuration for normal use.
+uart:
+  id: touch_uart
+  rx_pin: P1
+  baud_rate: 115200
 
-## Settings
-
-| Setting | Default | Meaning |
-| --- | --- | --- |
-| `scl` / `sda` | `P0` / `P1` | Internal GPIO pins, non-inverted |
-| `address` | `0x4A` | MPR031; select `0x4B` for MPR032 |
-| `touch_threshold` | `12` | 1–255; lower values increase sensitivity |
-| `release_threshold` | `6` | 0–254; must be below touch threshold |
-| `afe_configuration` | `0x10` | Raw MPR03x AFE register `0x41` |
-| `filter_configuration` | `0x24` | Raw filter register `0x43` |
-| `half_period_us` | `10` | 5–100 µs; GPIO overhead makes the clock slower |
-| `internal_pullups` | `false` | Optional MCU pull-ups; prefer existing external pull-ups |
-| `diagnostics` | `false` | Scan normal bus addresses at startup; log raw electrode snapshots every second |
-| `update_interval` | `20ms` | Button polling interval, minimum 10 ms |
-
-The initialization values are starting values, **not recovered SONOFF factory
-settings**. All three electrodes are enabled in independent Run1 mode with
-baseline tracking. Configuration is written in Stop mode. No IRQ pin is used,
-because IRQ and electrode 2 share a pin on this controller.
-
-The bus only drives lines low and releases them by switching to input. It checks
-ACKs, uses repeated START for register reads, NACKs the final read byte, bounds
-clock waits to 1 ms, and attempts up to nine recovery clocks during initialization.
-Communication failures invalidate button states and retry initialization after
-two seconds. The first readings are delayed 500 ms after initialization for
-baseline/filter settling. Overcurrent is reported as an error.
-
-## Hardware troubleshooting
-
-For the first test, enable the following in your **existing working firmware**:
-
-```yaml
-logger:
-  baud_rate: 0
-  level: DEBUG
-  logs:
-    mpr03x: DEBUG
-
-mpr03x:
+sonoff_t6:
   id: touch_controller
-  scl: P0
-  sda: P1
-  address: 0x4A
-  diagnostics: true
+  uart_id: touch_uart
+
+binary_sensor:
+  - platform: sonoff_t6
+    sonoff_t6_id: touch_controller
+    button_id: 3
+    name: Left touch
+    on_release:
+      - switch.toggle: relay_left
+  - platform: sonoff_t6
+    sonoff_t6_id: touch_controller
+    button_id: 1
+    name: Right touch
+    on_release:
+      - switch.toggle: relay_right
 ```
 
-Merge these keys into existing blocks; do not create duplicate `logger:` or
-`mpr03x:` blocks. With a GitHub external source, temporarily use `refresh: 0s`
-under the source entry when rebuilding to avoid using a cached component.
+Use your existing relay IDs. Use `on_press` instead of `on_release` to toggle
+on touch-down. Set `logger.baud_rate: 0`. If retaining UART debugging, set
+`uart.debug.dummy_receiver: false` so this component receives the bytes.
 
-Capture logs from a restart through about 10 seconds untouched, then touch each
-pad individually for 2–3 seconds, with a 2–3 second gap. Include the entire
-startup, configuration dump and test sequence, plus the YAML touch block and
-which physical pad you touched in what order. If network logging connects after
-initialization, include the periodic snapshots and restart with logging already
-attached if possible. Keep `baud_rate: 0` to leave P0/P1 free.
+See [configuration and diagnostics](docs/sonoff-t6-uart.md) for logging, timeout
+behavior and troubleshooting. The [minimal build example](examples/sonoff-t6-uart.yaml)
+uses a local component source for development.
 
-The logs identify driver revision 2, pin assignments, thresholds, pull-up mode,
-released bus levels, discovered addresses, pre-configuration status, every
-configuration register's readback, and touch-status changes. Transfer errors
-include the register, address, failed phase (address ACK, register pointer,
-data, repeated START or STOP), and line levels after STOP. Snapshots include
-uptime, read/failure counts, electrode configuration, filtered values, baseline
-values scaled to the same range, and baseline-minus-filtered deltas for all pads.
-Raw bytes are read sequentially, so snapshots are approximate during transitions.
+## Protocol and diagnostics
 
-Address probes alone do **not** identify a chip. With `diagnostics: true` the
-first recovered bus is scanned once from `0x08` through `0x77` using only a write
-address followed by STOP (no register/data writes). Otherwise only `0x4A` and
-`0x4B` are probed. Discovery never changes the configured address automatically.
-Successful configuration writes are always read back, even with diagnostics off.
-Logging is outside individual bit timing windows; successful individual register
-transactions are only logged at `VERY_VERBOSE`, which is unnecessary for a first
-test. Disable `diagnostics` after troubleshooting to remove the periodic reads.
+The driver validates checksums, handles fragmented/concatenated packets, and
+resynchronizes after malformed data. DEBUG logs include raw frames, button
+transitions, errors and periodic UART counters. Missing releases mark the
+sensor unknown after a configurable timeout.
 
-### Board photo observations
+- [Stock firmware analysis and protocol evidence](docs/sonoff-t6-firmware-analysis.md)
+- [Standalone UART capture configuration](examples/sonoff-t6-uart-capture.yaml)
 
-The provided `WS T6-120_TCH V1.1` photo (silkscreen date `2025.06.06`) shows J2
-labeled `GND / SCL / SDA / 3V3`, and a separate J3 labeled
-`GND / TXD / RXD / 3V3`. This supports separate bus and serial access, but does
-not prove the bus protocol, P0/P1 mapping, resistor values, pull-up voltage, or
-controller identity. U2 appears to be an eight-pin package with protruding leads;
-the documented NXP MPR031/032 package is a 2 mm leadless µDFN. Its marking is
-unreadable in this photo, so the MPR03x identification remains uncertain. A clear
-U2 marking or an address/register capture would resolve that uncertainty. The
-photo is kept local and is not included in the repository.
+The capture example is a separate diagnostic configuration. Its dummy receiver
+must be disabled when using the `sonoff_t6` component.
 
-1. Look for `Configured three electrodes at 0x4A` in the logs. If initialization
-   fails, verify the chip marking and try `address: 0x4B` for an MPR032.
-2. Check that both lines idle high. The reported 1 kΩ **series** resistors are
-   not pull-up resistors. Confirm the existing board's pull-ups and voltage rail;
-   do not assume the controller is powered at the MCU voltage.
-3. If the bus responds but touches do not register, adjust thresholds first,
-   then the AFE/filter values using the datasheet. Keep fingers off the pads
-   during boot and baseline acquisition.
-4. Verify every channel's press and release, simultaneous touches, a long hold,
-   MCU restart, and a complete power cycle before using the component normally.
+## Development
 
-## Firmware inspection
+Validated with ESPHome 2026.9.1 and LibreTiny 1.13.0:
 
-The supplied decrypted/decompressed dump stays local and is excluded from Git.
-`tools/inspect_firmware.py` lists touch-related strings;
-`tools/disassemble.py START END` provides local Thumb disassembly using Capstone
-and the dump's apparent `0x10000` mapping.
-
-The two references found to `touch_task` lead to functions at `0x26604` and
-`0x28B54` that consume buffers containing `AA 55` headers and checksums. They
-appear to handle a serial touch protocol. This observation **does not establish
-the physical interface of this particular board**, nor exclude another MPR03x
-code path. MPR03x initialization has not been identified in the dump. The driver
-is based on the reported wiring and public register documentation.
-
-## Development and publishing
-
-Configuration tests and the complete BK7238 firmware build pass against
-ESPHome 2026.9.1 and LibreTiny 1.13.0. Physical touch behavior remains untested.
-Install ESPHome, then:
-
-```powershell
-esphome config examples/sonoff-t6-touch.yaml
-esphome compile examples/sonoff-t6-touch.yaml
+```sh
 python -m unittest discover -s tests
+c++ -std=c++17 tests/test_protocol.cpp -o test_protocol
+./test_protocol
+esphome compile examples/sonoff-t6-uart.yaml
 ```
 
-`ci/validate.yml` is a GitHub Actions template. To enable it, copy it to
-`.github/workflows/validate.yml` using a GitHub login with `workflow` permission.
-The publishing credential did not have that permission, so automatic CI is not
-enabled in this repository.
+The native tests exercise the actual C++ parser against hardware-captured bytes,
+noise, invalid checksums/lengths, and fragmented/concatenated frames.
+`ci/validate.yml` is a GitHub Actions template; copy it to
+`.github/workflows/validate.yml` with a credential that has `workflow` permission
+to enable automated CI.
 
-## References
+Firmware inspection helpers under `tools/` require Capstone. They operate on
+the local dump; firmware images and board photos are excluded from Git.
 
-- [NXP/Freescale MPR03x datasheet](https://www.nxp.com.cn/docs/en/data-sheet/MPR03X.pdf)
-- [ESPHome LibreTiny GPIO implementation](https://github.com/esphome/esphome/blob/2026.9.1/esphome/components/libretiny/gpio_arduino.cpp)
-- [ESPHome external components](https://esphome.io/components/external_components/)
-
-The MPR03x register map differs from the MPR121; MPR121 initialization sequences
-must not be used with this component.
+MIT licensed; see [LICENSE](LICENSE).

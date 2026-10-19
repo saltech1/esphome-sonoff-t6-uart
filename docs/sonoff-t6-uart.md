@@ -10,13 +10,13 @@ consistent with press and release. These map to ON and OFF, respectively.
 No stock handshake/settings command was sent before the packets appeared.
 
 The actual C++ parser is tested against all twelve captured frames. The complete
-component is build-tested for BK7238 and still awaits a hardware test.
+component compiles for BK7238 and the owner has confirmed it works on the device.
 
 ## Configuration
 
-Merge this into the existing working Wi-Fi/API/OTA/relay configuration. Remove
-`mpr03x:` and its sensors. Replace the capture debugger's dummy receiver with
-this driver: if keeping UART debugging, **set `dummy_receiver: false`**.
+Merge this into the existing working Wi-Fi/API/OTA/relay configuration. Replace
+the capture debugger's dummy receiver with this driver: if keeping UART debugging,
+**set `dummy_receiver: false`**.
 Configuration validation rejects a competing dummy receiver.
 
 ```yaml

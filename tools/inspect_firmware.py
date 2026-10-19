@@ -5,5 +5,5 @@ import re
 dump = next(pathlib.Path('.').glob('*.bin'))
 data = dump.read_bytes()
 for match in re.finditer(rb'[ -~]{5,}', data):
-    if re.search(rb'mpr|touch|i2c|scl|sda', match.group(), re.I):
+    if re.search(rb'touch|uart|scl|sda', match.group(), re.I):
         print(f'{match.start():08x}: {match.group().decode()}')

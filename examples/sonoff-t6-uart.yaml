@@ -1,5 +1,5 @@
 # Merge these touch blocks into your working configuration; retain Wi-Fi/API,
-# OTA and relays. Remove mpr03x and uart debug dummy_receiver if present.
+# OTA and relays. Set uart debug dummy_receiver to false if retaining debugging.
 esphome:
   name: sonoff-t6-uart
 

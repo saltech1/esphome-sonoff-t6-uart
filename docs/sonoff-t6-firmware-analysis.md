@@ -15,8 +15,8 @@ this receive path; see [usage](sonoff-t6-uart.md).
 
 The application's active touch path uses **UART2, 115200 baud, 8 data bits,
 no parity, one stop bit**, on **BK7238 P0/TX and P1/RX**. It sends and receives
-checksummed `AA 55` frames. This is strong evidence that an MPR031/032 I2C driver
-does not implement this board's stock touch interface.
+checksummed `AA 55` frames. Hardware captures confirmed this protocol and the
+owner subsequently confirmed the `sonoff_t6` component works on the device.
 
 This establishes the firmware's intended interface. It does not independently
 prove electrical continuity on a particular physical board. With the reported
@@ -88,8 +88,8 @@ AA 55 01 03 06 03 52 03 84 03 52 3A
 This is command `0x03` with six payload bytes. Interpreting those as three
 big-endian 16-bit numbers gives **850, 900, 850**. Per-pad configuration or
 sensitivity settings are plausible, but their meaning and units are **not
-established**. They are not documented MPR03x register writes. Do not tune them
-as if they were MPR03x thresholds.
+established**. These are UART command payload bytes whose interpretation has
+not been confirmed. The working component does not transmit them.
 
 ## Packet structure and events
 
@@ -137,8 +137,8 @@ device's behavior.
 ## Next hardware capture
 
 Use `examples/sonoff-t6-uart-capture.yaml` by merging its logger/UART/button
-blocks into the existing working firmware. Remove the `mpr03x` block and its
-binary sensors while testing; both interfaces cannot own P0/P1 simultaneously.
+blocks into the existing working firmware. Do not run the `sonoff_t6` component
+on the same UART while the capture debugger's dummy receiver is enabled.
 The example logs RX/TX hex and sends nothing automatically. Its optional
 template buttons let you send the exact stock startup/settings commands while
 the network log viewer is already attached.
@@ -156,7 +156,6 @@ the network log viewer is already attached.
 
 Silence does not disprove UART: controller power/reset, physical connections,
 startup sequence, and firmware/board revision matching remain possible causes.
-An ACK-less MPR03x test would not by itself distinguish those causes.
 
 ## Reproduction
 
