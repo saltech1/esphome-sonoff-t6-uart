@@ -11,3 +11,4 @@ jobs:
       - run: pip install esphome==2026.9.1
       - run: python -m unittest discover -s tests
       - run: esphome compile examples/sonoff-t6-touch.yaml
+      - run: esphome compile examples/sonoff-t6-uart-capture.yaml

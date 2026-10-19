@@ -1,0 +1,47 @@
+# Merge logger/uart/button blocks into your existing working network/relay YAML.
+# Remove mpr03x and its binary sensors while testing this UART interface.
+# Nothing is transmitted until you press one of the optional template buttons.
+esphome:
+  name: sonoff-t6-uart-capture
+
+bk72xx:
+  board: generic-bk7238
+
+logger:
+  baud_rate: 0
+  level: DEBUG
+  logs:
+    uart_debug: DEBUG
+
+uart:
+  id: touch_uart
+  tx_pin: P0
+  rx_pin: P1
+  baud_rate: 115200
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  debug:
+    direction: BOTH
+    dummy_receiver: true
+    after:
+      bytes: 64
+      timeout: 20ms
+    sequence:
+      - lambda: UARTDebug::log_hex(direction, bytes, ' ');
+
+button:
+  - platform: template
+    name: Touch UART stock handshake
+    entity_category: diagnostic
+    on_press:
+      - uart.write:
+          id: touch_uart
+          data: [0xAA, 0x55, 0x01, 0x01, 0x00, 0x01]
+  - platform: template
+    name: Touch UART stock settings
+    entity_category: diagnostic
+    on_press:
+      - uart.write:
+          id: touch_uart
+          data: [0xAA, 0x55, 0x01, 0x03, 0x06, 0x03, 0x52, 0x03, 0x84, 0x03, 0x52, 0x3A]
