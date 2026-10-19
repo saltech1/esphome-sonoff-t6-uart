@@ -7,6 +7,12 @@ to obtain file offsets. The dump and board photo remain local.
 
 ## Conclusions and limits
 
+**Hardware follow-up:** the owner's two-pad device subsequently matched twelve
+predicted frames (three left taps, then three right taps), with valid checksums.
+Left reports button ID 3, right reports ID 1. Each tap reports event 1 then event
+0. No handshake/settings button was pressed. The `sonoff_t6` component implements
+this receive path; see [usage](sonoff-t6-uart.md).
+
 The application's active touch path uses **UART2, 115200 baud, 8 data bits,
 no parity, one stop bit**, on **BK7238 P0/TX and P1/RX**. It sends and receives
 checksummed `AA 55` frames. This is strong evidence that an MPR031/032 I2C driver

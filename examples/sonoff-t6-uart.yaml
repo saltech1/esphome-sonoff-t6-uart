@@ -1,0 +1,42 @@
+# Merge these touch blocks into your working configuration; retain Wi-Fi/API,
+# OTA and relays. Remove mpr03x and uart debug dummy_receiver if present.
+esphome:
+  name: sonoff-t6-uart
+
+bk72xx:
+  board: generic-bk7238
+
+logger:
+  baud_rate: 0
+  level: DEBUG
+  logs:
+    sonoff_t6: DEBUG
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [sonoff_t6]
+
+uart:
+  id: touch_uart
+  rx_pin: P1
+  baud_rate: 115200
+
+sonoff_t6:
+  id: touch_controller
+  uart_id: touch_uart
+
+binary_sensor:
+  - platform: sonoff_t6
+    sonoff_t6_id: touch_controller
+    button_id: 3
+    name: Left touch
+    # on_release:
+    #   - switch.toggle: relay_left
+  - platform: sonoff_t6
+    sonoff_t6_id: touch_controller
+    button_id: 1
+    name: Right touch
+    # on_release:
+    #   - switch.toggle: relay_right

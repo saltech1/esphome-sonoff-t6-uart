@@ -1,14 +1,27 @@
-# ESPHome MPR03x touch buttons
+# ESPHome SONOFF T6 touch buttons
+
+**Hardware capture confirms the UART touch protocol.** The `sonoff_t6`
+component exposes the two physical pads on the tested device:
+**left = button ID 3**, **right = button ID 1**. It receives on **P1 at 115200
+8N1** and sends no commands automatically.
+
+Use the [SONOFF T6 component configuration](docs/sonoff-t6-uart.md) and
+[compile example](examples/sonoff-t6-uart.yaml). If retaining UART debug output,
+set `dummy_receiver: false` so the driver can consume the bytes. The C++ parser
+is tested against the captures; the full component still needs a hardware test.
 
 **SONOFF T6 firmware research update:** deeper analysis of the supplied stock
 dump traces the active touch interface to **UART2 at 115200 8N1, P0/TX and
 P1/RX**, with checksummed `AA 55` packets. The original MPR03x identification is
-not supported by that path. **Use the [UART capture example](examples/sonoff-t6-uart-capture.yaml)
-for the next T6 hardware test**, and remove the MPR03x blocks while doing so.
+not supported by that path. The [UART capture example](examples/sonoff-t6-uart-capture.yaml)
+remains available for raw protocol investigation. Remove the MPR03x blocks
+when using either UART example.
 The actual unmarked U2 part number is still unknown. See the
 [firmware evidence and recovered commands](docs/sonoff-t6-firmware-analysis.md).
 The MPR03x component below remains an experimental driver for actual
 MPR031/032 controllers; it is not established as suitable for this SONOFF board.
+
+## Original experimental MPR03x driver
 
 External component for the MPR031/MPR032 capacitive touch controller, targeting
 the SONOFF T6 with a BK7238 and **SCL on P0 / SDA on P1**. Implements a private

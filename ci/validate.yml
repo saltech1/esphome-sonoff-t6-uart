@@ -10,5 +10,7 @@ jobs:
           python-version: '3.12'
       - run: pip install esphome==2026.9.1
       - run: python -m unittest discover -s tests
+      - run: c++ -std=c++17 -Wall -Wextra tests/test_protocol.cpp -o /tmp/test_protocol && /tmp/test_protocol
       - run: esphome compile examples/sonoff-t6-touch.yaml
       - run: esphome compile examples/sonoff-t6-uart-capture.yaml
+      - run: esphome compile examples/sonoff-t6-uart.yaml
