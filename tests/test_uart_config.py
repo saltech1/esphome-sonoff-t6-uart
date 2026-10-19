@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 class UARTConfigurationTests(unittest.TestCase):
     def check_config(self, uart_changes=None, button_id=None):
         config = yaml.safe_load((ROOT / 'examples/sonoff-t6-uart.yaml').read_text())
-        config['external_components'][0]['source']['path'] = str(ROOT / 'components')
+        config['external_components'][0]['source'] = {'type': 'local', 'path': str(ROOT / 'components')}
         if uart_changes:
             config['uart'].update(uart_changes)
         if button_id is not None:

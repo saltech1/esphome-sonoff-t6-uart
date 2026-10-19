@@ -1,22 +1,40 @@
-# Merge these touch blocks into your working configuration; retain Wi-Fi/API,
-# OTA and relays. Set uart debug dummy_receiver to false if retaining debugging.
+# Merge the output/light/status_led/touch blocks into your working device YAML.
+# Retain your existing Wi-Fi, API and OTA configuration.
 esphome:
   name: sonoff-t6-uart
 
 bk72xx:
   board: generic-bk7238
 
-logger:
-  baud_rate: 0
-  level: DEBUG
-  logs:
-    sonoff_t6: DEBUG
+output:
+  - platform: gpio
+    pin: P6
+    id: relay_right
+  - platform: gpio
+    pin: P26
+    id: relay_left
+
+light:
+  - platform: binary
+    name: Right Light
+    id: right_relay_light
+    output: relay_right
+  - platform: binary
+    name: Left Light
+    id: left_relay_light
+    output: relay_left
+
+status_led:
+  pin:
+    number: P9
+    inverted: false
 
 external_components:
-  - source:
-      type: local
-      path: ../components
+  - source: github://saltech1/esphome-sonoff-t6-uart@main
     components: [sonoff_t6]
+
+logger:
+  baud_rate: 0
 
 uart:
   id: touch_uart
@@ -32,11 +50,17 @@ binary_sensor:
     sonoff_t6_id: touch_controller
     button_id: 3
     name: Left touch
-    # on_release:
-    #   - switch.toggle: relay_left
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: left_relay_light
   - platform: sonoff_t6
     sonoff_t6_id: touch_controller
     button_id: 1
     name: Right touch
-    # on_release:
-    #   - switch.toggle: relay_right
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: right_relay_light

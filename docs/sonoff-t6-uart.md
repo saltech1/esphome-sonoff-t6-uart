@@ -20,16 +20,35 @@ the capture debugger's dummy receiver with this driver: if keeping UART debuggin
 Configuration validation rejects a competing dummy receiver.
 
 ```yaml
+output:
+  - platform: gpio
+    pin: P6
+    id: relay_right
+  - platform: gpio
+    pin: P26
+    id: relay_left
+
+light:
+  - platform: binary
+    name: Right Light
+    id: right_relay_light
+    output: relay_right
+  - platform: binary
+    name: Left Light
+    id: left_relay_light
+    output: relay_left
+
+status_led:
+  pin:
+    number: P9
+    inverted: false
+
 external_components:
   - source: github://saltech1/esphome-sonoff-t6-uart@main
-    refresh: 0s  # Useful while testing updates; omit for normal operation.
     components: [sonoff_t6]
 
 logger:
   baud_rate: 0
-  level: DEBUG
-  logs:
-    sonoff_t6: DEBUG
 
 uart:
   id: touch_uart
@@ -45,28 +64,36 @@ binary_sensor:
     sonoff_t6_id: touch_controller
     button_id: 3
     name: Left touch
-    on_release:
-      - switch.toggle: relay_left
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: left_relay_light
   - platform: sonoff_t6
     sonoff_t6_id: touch_controller
     button_id: 1
     name: Right touch
-    on_release:
-      - switch.toggle: relay_right
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: right_relay_light
 ```
 
-Use your existing relay IDs. First verify sensor mapping before attaching relay
-actions. `on_release` follows the stock firmware's event-0 toggle behavior;
-use `on_press` instead if you want the action on event 1. Do not configure both
-to toggle the same relay.
+The example uses the owner's pin assignments: right relay P6, left relay P26,
+and status LED P9 (not inverted). Each relay is exposed as a binary light.
+A tap lasting 10–350 ms toggles its light with `light.toggle`; longer holds do
+not match this click automation. Output IDs remain `relay_left`/`relay_right`;
+light entity IDs are `left_relay_light`/`right_relay_light`.
 
 The UART framing is 115200 8N1, checked during validation. The driver never
 transmits, so `tx_pin` is optional; keeping `tx_pin: P0` is fine. No automatic
 handshake or settings commands are sent. Only the two configured button IDs
 are exposed; there is no third sensor in the example.
 
-`examples/sonoff-t6-uart.yaml` is a minimal compile example, not a replacement
-for your complete working device configuration.
+`examples/sonoff-t6-uart.yaml` includes the BK7238 board configuration and the
+complete binary-light example. Retain your own Wi-Fi/API/OTA settings when
+merging it into your device configuration.
 
 ## Diagnostics and behavior
 

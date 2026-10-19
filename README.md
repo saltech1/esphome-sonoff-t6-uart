@@ -13,12 +13,41 @@ event `0` means released. It sends no initialization or settings commands.
 
 ## Use
 
-Merge these blocks into your existing working Wi-Fi/API/OTA/relay configuration:
+This example uses the owner's working pin assignments: P6 for the right relay,
+P26 for the left relay, and P9 for the status LED. Relays are exposed as binary
+lights. Merge these blocks into your existing device configuration, retaining
+your Wi-Fi/API/OTA settings:
 
 ```yaml
+output:
+  - platform: gpio
+    pin: P6
+    id: relay_right
+  - platform: gpio
+    pin: P26
+    id: relay_left
+
+light:
+  - platform: binary
+    name: Right Light
+    id: right_relay_light
+    output: relay_right
+  - platform: binary
+    name: Left Light
+    id: left_relay_light
+    output: relay_left
+
+status_led:
+  pin:
+    number: P9
+    inverted: false
+
 external_components:
   - source: github://saltech1/esphome-sonoff-t6-uart@main
     components: [sonoff_t6]
+
+logger:
+  baud_rate: 0
 
 uart:
   id: touch_uart
@@ -34,23 +63,30 @@ binary_sensor:
     sonoff_t6_id: touch_controller
     button_id: 3
     name: Left touch
-    on_release:
-      - switch.toggle: relay_left
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: left_relay_light
   - platform: sonoff_t6
     sonoff_t6_id: touch_controller
     button_id: 1
     name: Right touch
-    on_release:
-      - switch.toggle: relay_right
+    on_click:
+      - min_length: 10ms
+        max_length: 350ms
+        then:
+          - light.toggle: right_relay_light
 ```
 
-Use your existing relay IDs. Use `on_press` instead of `on_release` to toggle
-on touch-down. Set `logger.baud_rate: 0`. If retaining UART debugging, set
+Each 10–350 ms tap toggles the corresponding light. The relay outputs keep
+their existing GPIO assignments; the entities use `left_relay_light` and
+`right_relay_light` IDs. If retaining UART debugging, set
 `uart.debug.dummy_receiver: false` so this component receives the bytes.
 
 See [configuration and diagnostics](docs/sonoff-t6-uart.md) for logging, timeout
-behavior and troubleshooting. The [minimal build example](examples/sonoff-t6-uart.yaml)
-uses a local component source for development.
+behavior and troubleshooting. The [complete example](examples/sonoff-t6-uart.yaml) includes the BK7238 board
+configuration and loads the component from GitHub.
 
 ## Protocol and diagnostics
 
