@@ -1,0 +1,10 @@
+*.bin
+*.rbl
+*.uf2
+.venv/
+.esphome/
+.pio/
+__pycache__/
+*.pyc
+secrets.yaml
+.cache/

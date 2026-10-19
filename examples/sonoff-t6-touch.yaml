@@ -1,0 +1,39 @@
+# Compile check and touch-only example. Keep your existing board/relay/Wi-Fi
+# configuration when merging the external_components/mpr03x/binary_sensor blocks.
+esphome:
+  name: sonoff-t6-touch
+
+bk72xx:
+  board: generic-bk7238
+
+logger:
+  baud_rate: 0
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [mpr03x]
+
+mpr03x:
+  id: touch_controller
+  scl: P0
+  sda: P1
+  address: 0x4A
+  touch_threshold: 12
+  release_threshold: 6
+  update_interval: 20ms
+
+binary_sensor:
+  - platform: mpr03x
+    mpr03x_id: touch_controller
+    channel: 0
+    name: Touch electrode 0
+  - platform: mpr03x
+    mpr03x_id: touch_controller
+    channel: 1
+    name: Touch electrode 1
+  - platform: mpr03x
+    mpr03x_id: touch_controller
+    channel: 2
+    name: Touch electrode 2
